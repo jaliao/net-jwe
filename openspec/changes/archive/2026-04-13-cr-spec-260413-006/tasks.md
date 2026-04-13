@@ -26,6 +26,6 @@
 ## 5. 驗證
 
 - [x] 5.1 `dotnet build` 成功，無 warning 或 error
-- [ ] 5.2 Demo 頁面按「開始解密」確認成功（透過 API 串接）
-- [ ] 5.3 curl 呼叫 `POST /api/decrypt` 使用 Demo token，確認回傳 200 含 zipBase64
-- [ ] 5.4 傳入空白欄位確認回傳 400 + error 訊息
+- [x] 5.2 Demo 頁面按「開始解密」確認成功（透過 API 串接）
+- [x] 5.3 curl 呼叫 `POST /api/decrypt` 使用 Demo token，確認回傳 200 含 zipBase64
+- [x] 5.4 傳入空白欄位確認回傳 400 + error 訊息
