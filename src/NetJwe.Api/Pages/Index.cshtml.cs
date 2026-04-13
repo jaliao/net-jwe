@@ -19,14 +19,14 @@ public class IndexModel : PageModel
     private const string FileNameKey = "FileName";
 
     // demo data — 官方範例參數（數發部技術文件 v4.8 §39）
+    // Demo token 使用官方範例參數（secret_key + IV）在本地產生，payload 為空 zip（demo.zip）
     private const string DemoToken =
         "eyJhbGciOiJBMjU2S1ciLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIn0" +
-        ".mJQI42l08E3mz6Zac4OlHsNDXxz7g6DoAmJqayHmmEVIUIiNhLMYS5kjWAKPl7L" +
-        "rsFZ0pmdFVqfC77688Mdfni0Xgu4PST" +
+        ".EY4fcoqReDN9TXc43YHZQzmbSICst8mIFeSmsPlVnDH3sYgFDscNZzoTTvRUJi622ELCSAJrFl8uAYId6wbiJFW4LLadwUbO" +
         ".SHR6R1k3ZzFoTHk1Ymw5Ug" +
-        ".LMz7XIhl2p6FPQwXfHAhb0yZ7YjgjPsLXzR6J96Lxzcz0G3dR5P5_" +
-        "MB_NBQmumD7exefh2GpXjCvwkI277CD5htL7XzJodZLIqOwp1Ymhg" +
-        ".C7iWNo6BVCpamm3KlpuPxJYgCkcCh1QcTc8BzDKD3Sw";
+        ".b_2NwSsqRIHUC-IYQqh-x_ZMcVen_fVDhRNXlYFc5FBCsSFVdQd9Dh2TR0GZ5Ey4azzljD0" +
+        "V6E3qwUIli77OmNLDAuLmSV4KEKGhNQz6WqU1SxgmCIUlbBE-uofLV1pD" +
+        ".VzN5r3a7VIC5Gw4YUmbaasgw6PKeJIf_JhZlfGOEi9I";
 
     private const string DemoSecretKey = "dgFpgO7FhNF15UJsOB1xmCjwwWw3SO6D";
     private const string DemoIv = "HtzGY7g1hLy5bl9R";
@@ -81,8 +81,8 @@ public class IndexModel : PageModel
             FileName = result.FileName;
             IsDecrypted = true;
 
-            // 將 zip bytes 暫存於 Session TempData 供下載使用
-            TempData[ZipBytesKey] = result.FileBytes;
+            // TempData 僅支援基本型別，byte[] 需轉為 Base64 字串儲存
+            TempData[ZipBytesKey] = Convert.ToBase64String(result.FileBytes);
             TempData[FileNameKey] = result.FileName;
             TempData.Keep(ZipBytesKey);
             TempData.Keep(FileNameKey);
@@ -109,10 +109,17 @@ public class IndexModel : PageModel
         TempData.Keep(ZipBytesKey);
         TempData.Keep(FileNameKey);
 
-        var zipBytes = TempData[ZipBytesKey] as byte[];
+        var zipBase64 = TempData[ZipBytesKey] as string;
         var fileName = TempData[FileNameKey] as string ?? "download.zip";
 
-        if (zipBytes == null || zipBytes.Length == 0)
+        if (string.IsNullOrEmpty(zipBase64))
+        {
+            ErrorMessage = "找不到可下載的檔案，請重新執行解密";
+            return Page();
+        }
+
+        var zipBytes = Convert.FromBase64String(zipBase64);
+        if (zipBytes.Length == 0)
         {
             ErrorMessage = "找不到可下載的檔案，請重新執行解密";
             return Page();

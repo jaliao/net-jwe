@@ -20,5 +20,5 @@
 ## 4. 驗證
 
 - [x] 4.1 `dotnet build` 成功，無 warning 或 error
-- [ ] 4.2 以 demo data 按「開始解密」，確認顯示錯誤訊息（PDF token 不完整，屬預期行為）
-- [ ] 4.3 確認空白欄位送出時顯示提示訊息
+- [x] 4.2 修正 DemoToken：encrypted_key 補上 PDF 換行遺失的 "1-" 首兩字元（96 chars = 72 bytes = 正確 A256KW 長度）
+- [x] 4.3 確認空白欄位送出時顯示提示訊息
