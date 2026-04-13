@@ -74,13 +74,58 @@
         }
 
         @* 參數說明 *@
-        <div class="card border-0 bg-light">
+        <div class="card border-0 bg-light mb-4">
             <div class="card-body small text-muted">
                 <strong>預填 Demo Data</strong>（使用數發部技術文件 v4.8 §39 官方範例參數產生）<br/>
                 Secret Key：<code>dgFpgO7FhNF15UJsOB1xmCjwwWw3SO6D</code> ·
                 IV：<code>HtzGY7g1hLy5bl9R</code><br/>
                 按「開始解密」可下載 <code>demo.zip</code>（空白 zip，僅供功能驗證）。
                 取得真實 myData 核發的 token 後替換即可。
+            </div>
+        </div>
+
+        @* API 說明 *@
+        <div class="card mb-4">
+            <div class="card-header fw-semibold">API 使用說明</div>
+            <div class="card-body">
+
+                <p class="mb-2">
+                    <span class="badge bg-primary me-1">POST</span>
+                    <code>/api/decrypt</code>
+                    <span class="text-muted ms-2 small">Content-Type: application/json</span>
+                </p>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <p class="fw-semibold small mb-1">Request</p>
+                        <pre class="bg-light p-2 rounded small mb-0">{
+  "jweToken": "&lt;JWE Compact Serialization&gt;",
+  "secretKey": "&lt;32 字元金鑰&gt;",
+  "iv": "&lt;16 字元 IV&gt;"
+}</pre>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="fw-semibold small mb-1">Response 200</p>
+                        <pre class="bg-light p-2 rounded small mb-0">{
+  "filename": "xxxxx.zip",
+  "zipBase64": "&lt;Base64 編碼的 zip&gt;"
+}</pre>
+                        <p class="fw-semibold small mb-1 mt-2">Response 400</p>
+                        <pre class="bg-light p-2 rounded small mb-0">{
+  "error": "&lt;錯誤說明&gt;"
+}</pre>
+                    </div>
+                </div>
+
+                <p class="fw-semibold small mb-1">curl 範例</p>
+                <pre class="bg-dark text-light p-3 rounded small mb-0" style="white-space:pre-wrap;word-break:break-all;">curl -X POST @($"{Request.Scheme}://{Request.Host}")/api/decrypt \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jweToken": "&lt;貼入 JWE token&gt;",
+    "secretKey": "dgFpgO7FhNF15UJsOB1xmCjwwWw3SO6D",
+    "iv": "HtzGY7g1hLy5bl9R"
+  }'</pre>
+
             </div>
         </div>
 

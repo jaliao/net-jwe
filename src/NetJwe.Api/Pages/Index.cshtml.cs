@@ -1,15 +1,14 @@
 /*
  * ----------------------------------------------
  * IndexModel — JWE 解密 Demo 頁面 PageModel
- * 2026-04-13
+ * 2026-04-13 (Updated: 2026-04-13)
  * src/NetJwe.Api/Pages/Index.cshtml.cs
  * ----------------------------------------------
  */
 
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using NetJwe.Core.Exceptions;
-using NetJwe.Core.Interfaces;
 
 namespace NetJwe.Api.Pages;
 
@@ -18,7 +17,6 @@ public class IndexModel : PageModel
     private const string ZipBytesKey = "ZipBytes";
     private const string FileNameKey = "FileName";
 
-    // demo data — 官方範例參數（數發部技術文件 v4.8 §39）
     // Demo token 使用官方範例參數（secret_key + IV）在本地產生，payload 為空 zip（demo.zip）
     private const string DemoToken =
         "eyJhbGciOiJBMjU2S1ciLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIn0" +
@@ -31,11 +29,11 @@ public class IndexModel : PageModel
     private const string DemoSecretKey = "dgFpgO7FhNF15UJsOB1xmCjwwWw3SO6D";
     private const string DemoIv = "HtzGY7g1hLy5bl9R";
 
-    private readonly IJweService _jweService;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public IndexModel(IJweService jweService)
+    public IndexModel(IHttpClientFactory httpClientFactory)
     {
-        _jweService = jweService;
+        _httpClientFactory = httpClientFactory;
     }
 
     [BindProperty]
@@ -55,9 +53,9 @@ public class IndexModel : PageModel
     public void OnGet() { }
 
     /// <summary>
-    /// 執行 JWE 解密
+    /// 透過 POST /api/decrypt 執行 JWE 解密
     /// </summary>
-    public IActionResult OnPostDecrypt()
+    public async Task<IActionResult> OnPostDecryptAsync()
     {
         // 清除上次結果
         TempData.Remove(ZipBytesKey);
@@ -71,31 +69,45 @@ public class IndexModel : PageModel
             return Page();
         }
 
-        // 移除 JWE token 中可能存在的空白與換行（來自 PDF 複製貼上）
-        var cleanToken = JweToken.Trim().Replace("\n", "").Replace("\r", "").Replace(" ", "");
+        var apiUrl = $"{Request.Scheme}://{Request.Host}/api/decrypt";
+        var client = _httpClientFactory.CreateClient();
 
         try
         {
-            var result = _jweService.Decrypt(cleanToken, SecretKey.Trim(), Iv.Trim());
+            var response = await client.PostAsJsonAsync(apiUrl, new
+            {
+                jweToken = JweToken,
+                secretKey = SecretKey,
+                iv = Iv
+            });
 
-            FileName = result.FileName;
-            IsDecrypted = true;
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<DecryptApiResponse>();
+                if (result is null)
+                {
+                    ErrorMessage = "API 回傳格式異常";
+                    return Page();
+                }
 
-            // TempData 僅支援基本型別，byte[] 需轉為 Base64 字串儲存
-            TempData[ZipBytesKey] = Convert.ToBase64String(result.FileBytes);
-            TempData[FileNameKey] = result.FileName;
-            TempData.Keep(ZipBytesKey);
-            TempData.Keep(FileNameKey);
-        }
-        catch (JweException ex)
-        {
-            ErrorMessage = ex.Message;
-            if (ex.InnerException != null)
-                ErrorMessage += $"\n詳細：{ex.InnerException.Message}";
+                FileName = result.Filename;
+                IsDecrypted = true;
+
+                // TempData 儲存 Base64 字串（API 已回傳 Base64，直接存入）
+                TempData[ZipBytesKey] = result.ZipBase64;
+                TempData[FileNameKey] = result.Filename;
+                TempData.Keep(ZipBytesKey);
+                TempData.Keep(FileNameKey);
+            }
+            else
+            {
+                var error = await response.Content.ReadFromJsonAsync<ErrorApiResponse>();
+                ErrorMessage = error?.Error ?? "解密失敗（未知錯誤）";
+            }
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"未預期的錯誤：{ex.Message}";
+            ErrorMessage = $"呼叫 API 失敗：{ex.Message}";
         }
 
         return Page();
@@ -127,4 +139,7 @@ public class IndexModel : PageModel
 
         return File(zipBytes, "application/zip", fileName);
     }
+
+    private record DecryptApiResponse(string Filename, string ZipBase64);
+    private record ErrorApiResponse(string Error);
 }

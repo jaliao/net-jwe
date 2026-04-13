@@ -10,21 +10,25 @@ using NetJwe.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 註冊 Razor Pages
-builder.Services.AddRazorPages();
+// 註冊 Controllers（REST API）
+builder.Services.AddControllers();
+
+// 註冊 Razor Pages + TempData（Session）
+builder.Services.AddRazorPages().AddSessionStateTempDataProvider();
+builder.Services.AddSession();
 
 // 註冊 JWE 解密服務
 builder.Services.AddNetJwe();
 
-// TempData 使用 Cookie（儲存 zip bytes）
-builder.Services.AddRazorPages().AddSessionStateTempDataProvider();
-builder.Services.AddSession();
+// HttpClient 供 Demo 頁面串接自身 API
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
 app.UseSession();
 app.UseStaticFiles();
 app.UseRouting();
+app.MapControllers();
 app.MapRazorPages();
 
 app.Run();
