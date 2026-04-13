@@ -1,29 +1,26 @@
 /*
  * ----------------------------------------------
- * IJweService — JWE 加解密服務介面
- * 2026-04-13
+ * IJweService — JWE 解密服務介面
+ * 2026-04-13 (Updated: 2026-04-13)
  * src/NetJwe.Core/Interfaces/IJweService.cs
  * ----------------------------------------------
  */
 
+using NetJwe.Core.Models;
+
 namespace NetJwe.Core.Interfaces;
 
 /// <summary>
-/// 定義 JWE（JSON Web Encryption）加解密操作的標準介面
+/// 定義 JWE（JSON Web Encryption）解密操作的標準介面
 /// </summary>
 public interface IJweService
 {
     /// <summary>
-    /// 將明文資料加密為 JWE 緊湊序列化字串
+    /// 將 myData 平台回傳的 JWE Compact Serialization 字串解密，取得 zip 檔案內容
     /// </summary>
-    /// <param name="plaintext">待加密的明文字串</param>
-    /// <returns>JWE 緊湊序列化字串</returns>
-    string Encrypt(string plaintext);
-
-    /// <summary>
-    /// 將 JWE 緊湊序列化字串解密為明文
-    /// </summary>
-    /// <param name="token">JWE 緊湊序列化字串</param>
-    /// <returns>解密後的明文字串</returns>
-    string Decrypt(string token);
+    /// <param name="token">JWE Compact Serialization 字串</param>
+    /// <param name="secretKey">myData 核發的 secret_key（32 字元 / 32 bytes）</param>
+    /// <param name="expectedIv">myData 管理後臺取得的 IV，用於驗證 JWE 中的 IV 一致性</param>
+    /// <returns>解密結果，包含 FileName 與 zip 檔案的二進位內容</returns>
+    JweDecryptResult Decrypt(string token, string secretKey, string expectedIv);
 }
