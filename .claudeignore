@@ -1,0 +1,37 @@
+# .NET build 輸出
+bin/
+obj/
+out/
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+project.assets.json
+project.lock.json
+
+# 測試結果
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# IDE
+.vs/
+.idea/
+*.user
+*.suo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 環境設定（可能含敏感資訊）
+.env
+.env.*
+appsettings.Development.json
+appsettings.Local.json
+appsettings.Production.json
+
+# OpenSpec 已封存的變更（不需納入上下文）
+openspec/changes/*/archive/
