@@ -1,0 +1,88 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "JWE 解密工具";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+
+        <h4 class="mb-4 fw-bold">JWE 解密測試</h4>
+
+        @* 解密表單 *@
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="post" asp-page-handler="Decrypt">
+                    <div class="mb-3">
+                        <label asp-for="JweToken" class="form-label fw-semibold">
+                            JWE Token
+                            <span class="badge bg-secondary ms-1">Compact Serialization</span>
+                        </label>
+                        <textarea asp-for="JweToken"
+                                  class="form-control font-monospace"
+                                  rows="6"
+                                  placeholder="貼入 JWE Compact Serialization 字串（可包含換行）"></textarea>
+                        <div class="form-text">支援多行貼入，系統自動移除換行與空白</div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="SecretKey" class="form-label fw-semibold">Secret Key</label>
+                            <input asp-for="SecretKey"
+                                   class="form-control font-monospace"
+                                   placeholder="myData 核發的 32 字元金鑰" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Iv" class="form-label fw-semibold">IV</label>
+                            <input asp-for="Iv"
+                                   class="form-control font-monospace"
+                                   placeholder="myData 管理後臺的 IV" />
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4">
+                            開始解密
+                        </button>
+                        <a href="/" class="btn btn-outline-secondary">清除</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @* 結果區塊 *@
+        @if (Model.IsDecrypted)
+        {
+            <div class="alert alert-success">
+                <h6 class="alert-heading fw-bold">解密成功</h6>
+                <p class="mb-2">
+                    檔案名稱：<code>@Model.FileName</code>
+                </p>
+                <form method="post" asp-page-handler="Download" class="d-inline">
+                    <button type="submit" class="btn btn-success btn-sm">
+                        下載 @Model.FileName
+                    </button>
+                </form>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger">
+                <h6 class="alert-heading fw-bold">解密失敗</h6>
+                <pre class="mb-0 result-box small">@Model.ErrorMessage</pre>
+            </div>
+        }
+
+        @* 參數說明 *@
+        <div class="card border-0 bg-light">
+            <div class="card-body small text-muted">
+                <strong>預填 Demo Data</strong>（數發部技術文件 v4.8 §39 官方範例）<br/>
+                Secret Key：<code>dgFpgO7FhNF15UJsOB1xmCjwwWw3SO6D</code> ·
+                IV：<code>HtzGY7g1hLy5bl9R</code><br/>
+                注意：範例 token 的 encrypted_key 段為 PDF 擷取文字，長度不足，解密預期失敗。
+                取得真實 myData token 後替換即可。
+            </div>
+        </div>
+
+    </div>
+</div>
