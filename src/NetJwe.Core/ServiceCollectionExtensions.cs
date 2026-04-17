@@ -27,6 +27,7 @@ public static class ServiceCollectionExtensions
                 new JweParser(),
                 new JweValidator(),
                 new JweDecryptor(),
+                new SecretKeyDecryptor(),
                 new MyDataPayloadParser()));
         return services;
     }

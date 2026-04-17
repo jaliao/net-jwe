@@ -1,18 +1,19 @@
 /*
  * ----------------------------------------------
- * JweDecryptorTests — JweDecryptor 單元測試
- * 2026-04-13
+ * JweDecryptorTests — JweDecryptor / SecretKeyDecryptor 單元測試
+ * 2026-04-13 (Updated: 2026-04-17)
  * tests/NetJwe.Core.Tests/JweDecryptorTests.cs
  * ----------------------------------------------
  */
 
+using System.Text;
 using NetJwe.Core.Exceptions;
 using NetJwe.Core.Services;
 
 namespace NetJwe.Core.Tests;
 
 /// <summary>
-/// JweDecryptor 的單元測試：secretKey 長度驗證、錯誤金鑰解密失敗
+/// JweDecryptor 與 SecretKeyDecryptor 的單元測試
 /// </summary>
 public class JweDecryptorTests
 {
@@ -54,4 +55,51 @@ public class JweDecryptorTests
     //     var result = _decryptor.DecryptCbc(OfficialJwe, key);
     //     Assert.False(string.IsNullOrEmpty(result));
     // }
+}
+
+/// <summary>
+/// SecretKeyDecryptor 的單元測試，使用 2026-04-17 真實測試資料作為測試向量
+/// </summary>
+public class SecretKeyDecryptorTests
+{
+    private readonly SecretKeyDecryptor _decryptor = new();
+
+    // 真實測試向量（2026-04-17 連江縣政府測試資料）
+    private const string EncryptedSecretKey = "oWgZzJHnJ8Vkty+YlkldC7TT8aQr7jcQUXlpmEvCESSQqDHoEA+ueZXF6Bm8L8tn";
+    private const string ClientSecret       = "8rtR3mtWlTynOigI";
+    private const string CbcIv              = "RjiCdd8OgJcTYgZr";
+    private const string ExpectedSecretKey  = "edf4933bc95e483ebdf29d30c4c751f7";
+
+    [Fact]
+    public void Decrypt_真實測試向量_回傳正確secretKey()
+    {
+        var result = _decryptor.Decrypt(EncryptedSecretKey, ClientSecret, CbcIv);
+
+        Assert.Equal(32, result.Length);
+        Assert.Equal(ExpectedSecretKey, Encoding.UTF8.GetString(result));
+    }
+
+    [Fact]
+    public void Decrypt_clientSecret長度錯誤_拋出JweException()
+    {
+        var ex = Assert.Throws<JweException>(() =>
+            _decryptor.Decrypt(EncryptedSecretKey, "tooshort", CbcIv));
+        Assert.Contains("client_secret", ex.Message);
+    }
+
+    [Fact]
+    public void Decrypt_cbcIv長度錯誤_拋出JweException()
+    {
+        var ex = Assert.Throws<JweException>(() =>
+            _decryptor.Decrypt(EncryptedSecretKey, ClientSecret, "badiv"));
+        Assert.Contains("cbc_iv", ex.Message);
+    }
+
+    [Fact]
+    public void Decrypt_clientSecret錯誤_拋出JweException()
+    {
+        var ex = Assert.Throws<JweException>(() =>
+            _decryptor.Decrypt(EncryptedSecretKey, "WrongSecret1234X", CbcIv));
+        Assert.Contains("解密失敗", ex.Message);
+    }
 }

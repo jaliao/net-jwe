@@ -1,7 +1,7 @@
 /*
  * ----------------------------------------------
  * JweService — JWE 解密服務（門面）
- * 2026-04-13
+ * 2026-04-13 (Updated: 2026-04-17)
  * src/NetJwe.Core/Services/JweService.cs
  * ----------------------------------------------
  */
@@ -13,24 +13,27 @@ using NetJwe.Core.Models;
 namespace NetJwe.Core.Services;
 
 /// <summary>
-/// JWE 解密門面服務，協調 JweParser、JweValidator、JweDecryptor、MyDataPayloadParser 完成完整解密流程
+/// JWE 解密門面服務，協調 JweParser、JweValidator、JweDecryptor、SecretKeyDecryptor、MyDataPayloadParser 完成完整解密流程
 /// </summary>
 public class JweService : IJweService
 {
     private readonly JweParser _parser;
     private readonly JweValidator _validator;
     private readonly JweDecryptor _decryptor;
+    private readonly SecretKeyDecryptor _secretKeyDecryptor;
     private readonly MyDataPayloadParser _payloadParser;
 
     internal JweService(
         JweParser parser,
         JweValidator validator,
         JweDecryptor decryptor,
+        SecretKeyDecryptor secretKeyDecryptor,
         MyDataPayloadParser payloadParser)
     {
         _parser = parser;
         _validator = validator;
         _decryptor = decryptor;
+        _secretKeyDecryptor = secretKeyDecryptor;
         _payloadParser = payloadParser;
     }
 
@@ -59,5 +62,16 @@ public class JweService : IJweService
         var fileBytes = _payloadParser.DecodeData(payload.Data!);
 
         return new JweDecryptResult(payload.FileName!, fileBytes);
+    }
+
+    /// <inheritdoc />
+    public JweDecryptResult DecryptWithEncryptedKey(string token, string encryptedSecretKey, string clientSecret, string cbcIv)
+    {
+        // 步驟一：以 client_secret 解密 SP-API 傳來的 encrypted_secret_key，取回明文 secret_key
+        var secretKeyBytes = _secretKeyDecryptor.Decrypt(encryptedSecretKey, clientSecret, cbcIv);
+        var secretKey = Encoding.UTF8.GetString(secretKeyBytes);
+
+        // 步驟二以後：走既有的 Decrypt 流程
+        return Decrypt(token, secretKey, cbcIv);
     }
 }

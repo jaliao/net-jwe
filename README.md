@@ -148,3 +148,7 @@ dotnet build
 # 執行測試
 dotnet test
 ```
+
+```bash
+dotnet run --project src/NetJwe.Api
+```
