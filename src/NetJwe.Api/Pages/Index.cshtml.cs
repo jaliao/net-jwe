@@ -10,6 +10,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 
 namespace NetJwe.Api.Pages;
 
@@ -18,31 +19,31 @@ public class IndexModel : PageModel
     private const string ZipBytesKey = "ZipBytes";
     private const string FileNameKey = "FileName";
 
-    private const string DemoEncryptedSecretKey =
-        "oWgZzJHnJ8Vkty+YlkldC7TT8aQr7jcQUXlpmEvCESSQqDHoEA+ueZXF6Bm8L8tn";
-    private const string DemoClientSecret = "8rtR3mtWlTynOigI";
-    private const string DemoIv = "RjiCdd8OgJcTYgZr";
-
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IWebHostEnvironment _env;
+    private readonly IConfiguration _config;
 
-    public IndexModel(IHttpClientFactory httpClientFactory, IWebHostEnvironment env)
+    public IndexModel(
+        IHttpClientFactory httpClientFactory,
+        IWebHostEnvironment env,
+        IConfiguration config)
     {
         _httpClientFactory = httpClientFactory;
         _env = env;
+        _config = config;
     }
 
     [BindProperty]
     public string JweToken { get; set; } = string.Empty;
 
     [BindProperty]
-    public string SecretKey { get; set; } = DemoEncryptedSecretKey;
+    public string SecretKey { get; set; } = string.Empty;
 
     [BindProperty]
-    public string ClientSecret { get; set; } = DemoClientSecret;
+    public string ClientSecret { get; set; } = string.Empty;
 
     [BindProperty]
-    public string Iv { get; set; } = DemoIv;
+    public string Iv { get; set; } = string.Empty;
 
     // 解密結果
     public string? FileName { get; set; }
@@ -51,6 +52,11 @@ public class IndexModel : PageModel
 
     public void OnGet()
     {
+        // 預填 Demo 預設值（來自設定系統，機敏資料不寫死於程式碼）
+        SecretKey    = _config["Demo:EncryptedSecretKey"] ?? string.Empty;
+        ClientSecret = _config["Demo:ClientSecret"] ?? string.Empty;
+        Iv           = _config["Demo:Iv"] ?? string.Empty;
+
         // 嘗試從 solution 根目錄的 data1.txt 載入 Demo JWE Token
         var data1Path = Path.GetFullPath(
             Path.Combine(_env.ContentRootPath, "..", "..", "data1.txt"));

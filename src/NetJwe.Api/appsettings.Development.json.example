@@ -1,0 +1,7 @@
+{
+  "Demo": {
+    "EncryptedSecretKey": "<SP-API 傳來的 encrypted_secret_key，base64，64 字元>",
+    "ClientSecret": "<myData 管理後臺的 client_secret，16 字元>",
+    "Iv": "<myData 管理後臺的 cbc iv，16 字元>"
+  }
+}
