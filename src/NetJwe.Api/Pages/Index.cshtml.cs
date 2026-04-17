@@ -1,7 +1,7 @@
 /*
  * ----------------------------------------------
  * IndexModel — JWE 解密 Demo 頁面 PageModel
- * 2026-04-13 (Updated: 2026-04-13)
+ * 2026-04-13 (Updated: 2026-04-17)
  * src/NetJwe.Api/Pages/Index.cshtml.cs
  * ----------------------------------------------
  */
@@ -9,6 +9,7 @@
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Hosting;
 
 namespace NetJwe.Api.Pages;
 
@@ -17,30 +18,28 @@ public class IndexModel : PageModel
     private const string ZipBytesKey = "ZipBytes";
     private const string FileNameKey = "FileName";
 
-    // Demo token 使用官方範例參數（secret_key + IV）在本地產生，payload 為空 zip（demo.zip）
-    private const string DemoToken =
-        "eyJhbGciOiJBMjU2S1ciLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIn0" +
-        ".EY4fcoqReDN9TXc43YHZQzmbSICst8mIFeSmsPlVnDH3sYgFDscNZzoTTvRUJi622ELCSAJrFl8uAYId6wbiJFW4LLadwUbO" +
-        ".SHR6R1k3ZzFoTHk1Ymw5Ug" +
-        ".b_2NwSsqRIHUC-IYQqh-x_ZMcVen_fVDhRNXlYFc5FBCsSFVdQd9Dh2TR0GZ5Ey4azzljD0" +
-        "V6E3qwUIli77OmNLDAuLmSV4KEKGhNQz6WqU1SxgmCIUlbBE-uofLV1pD" +
-        ".VzN5r3a7VIC5Gw4YUmbaasgw6PKeJIf_JhZlfGOEi9I";
-
-    private const string DemoSecretKey = "dgFpgO7FhNF15UJsOB1xmCjwwWw3SO6D";
-    private const string DemoIv = "HtzGY7g1hLy5bl9R";
+    private const string DemoEncryptedSecretKey =
+        "oWgZzJHnJ8Vkty+YlkldC7TT8aQr7jcQUXlpmEvCESSQqDHoEA+ueZXF6Bm8L8tn";
+    private const string DemoClientSecret = "8rtR3mtWlTynOigI";
+    private const string DemoIv = "RjiCdd8OgJcTYgZr";
 
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IWebHostEnvironment _env;
 
-    public IndexModel(IHttpClientFactory httpClientFactory)
+    public IndexModel(IHttpClientFactory httpClientFactory, IWebHostEnvironment env)
     {
         _httpClientFactory = httpClientFactory;
+        _env = env;
     }
 
     [BindProperty]
-    public string JweToken { get; set; } = DemoToken;
+    public string JweToken { get; set; } = string.Empty;
 
     [BindProperty]
-    public string SecretKey { get; set; } = DemoSecretKey;
+    public string SecretKey { get; set; } = DemoEncryptedSecretKey;
+
+    [BindProperty]
+    public string ClientSecret { get; set; } = DemoClientSecret;
 
     [BindProperty]
     public string Iv { get; set; } = DemoIv;
@@ -50,7 +49,15 @@ public class IndexModel : PageModel
     public string? ErrorMessage { get; set; }
     public bool IsDecrypted { get; set; }
 
-    public void OnGet() { }
+    public void OnGet()
+    {
+        // 嘗試從 solution 根目錄的 data1.txt 載入 Demo JWE Token
+        var data1Path = Path.GetFullPath(
+            Path.Combine(_env.ContentRootPath, "..", "..", "data1.txt"));
+
+        if (System.IO.File.Exists(data1Path))
+            JweToken = System.IO.File.ReadAllText(data1Path).Trim();
+    }
 
     /// <summary>
     /// 透過 POST /api/decrypt 執行 JWE 解密
@@ -78,6 +85,7 @@ public class IndexModel : PageModel
             {
                 jweToken = JweToken,
                 secretKey = SecretKey,
+                clientSecret = string.IsNullOrWhiteSpace(ClientSecret) ? null : ClientSecret,
                 iv = Iv
             });
 

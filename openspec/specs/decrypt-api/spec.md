@@ -1,14 +1,17 @@
-## ADDED Requirements
+## Requirements
 
-### Requirement: POST /api/decrypt 端點
-系統 SHALL 提供 `POST /api/decrypt` 端點，接受 JSON body 並回傳解密結果。
+### Requirement: POST /api/decrypt 端點（兩步驟模式）
+系統 SHALL 提供 `POST /api/decrypt` 端點，支援兩種解密模式：
+- **兩步驟模式**：提供 `clientSecret` 時，先以 AES/CBC 解密 `secretKey`（encrypted_secret_key），再解密 JWE
+- **單步模式**（向下相容）：未提供 `clientSecret` 時，直接以 `secretKey` 作為明文 secret_key 解密 JWE
 
 Request body（application/json）：
 ```json
 {
   "jweToken": "<JWE Compact Serialization 字串>",
-  "secretKey": "<32 字元金鑰>",
-  "iv": "<16 字元 IV>"
+  "secretKey": "<encrypted_secret_key (64 字元) 或明文 secret_key (32 字元)>",
+  "clientSecret": "<client_secret, 16 字元，選填>",
+  "iv": "<cbc iv, 16 字元>"
 }
 ```
 
@@ -27,16 +30,20 @@ Request body（application/json）：
 }
 ```
 
-#### Scenario: 參數完整且 token 有效，解密成功
-- **WHEN** 傳入有效的 jweToken、secretKey、iv
+#### Scenario: 兩步驟模式，解密成功
+- **WHEN** 傳入有效的 jweToken、encrypted_secret_key、clientSecret、iv
+- **THEN** 回傳 HTTP 200，body 含 filename 與 zipBase64
+
+#### Scenario: 單步模式，解密成功（向下相容）
+- **WHEN** 傳入有效的 jweToken、明文 secretKey（32 字元）、iv，未提供 clientSecret
 - **THEN** 回傳 HTTP 200，body 含 filename 與 zipBase64
 
 #### Scenario: 缺少必填欄位
 - **WHEN** jweToken、secretKey、iv 任一為空白或未傳入
-- **THEN** 回傳 HTTP 400，body 含 error 說明缺少哪個欄位
+- **THEN** 回傳 HTTP 400，body 含 error 說明缺少必填欄位
 
-#### Scenario: token 損毀或 secret_key 不符
-- **WHEN** 傳入格式正確但內容錯誤的 token 或 secret_key
+#### Scenario: token 損毀或金鑰不符
+- **WHEN** 傳入格式正確但內容錯誤的 token 或金鑰
 - **THEN** 回傳 HTTP 400，body 含 error 說明解密失敗原因
 
 #### Scenario: jweToken 含換行或空白

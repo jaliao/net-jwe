@@ -15,14 +15,16 @@ src/
   NetJwe.Core/          # 核心加解密邏輯 (class library)
     Interfaces/         # 服務介面定義
     Services/           # 服務實作
+      SecretKeyDecryptor.cs   # Step 1：AES/CBC 解密 encrypted_secret_key
+      JweDecryptor.cs         # Step 2：JWE 解封裝與解密
+      JweService.cs           # 門面服務（整合兩步驟流程）
     Models/             # 資料模型
     Exceptions/         # 自訂例外
-  NetJwe.Api/           # Web API 服務 (class library)
-    Controllers/
-    Models/
+  NetJwe.Api/           # Web API + Demo UI
+    Controllers/        # POST /api/decrypt
+    Pages/              # Demo UI（Razor Pages）
 tests/
   NetJwe.Core.Tests/    # xUnit 單元測試
-docs/                   # 文件
 ```
 
 ### 常用指令

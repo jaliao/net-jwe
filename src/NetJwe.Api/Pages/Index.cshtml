@@ -25,18 +25,35 @@
                         <div class="form-text">支援多行貼入，系統自動移除換行與空白</div>
                     </div>
 
+                    <div class="mb-3">
+                        <label asp-for="SecretKey" class="form-label fw-semibold">
+                            Secret Key
+                            <span class="badge bg-secondary ms-1">SP-API encrypted_secret_key</span>
+                        </label>
+                        <input asp-for="SecretKey"
+                               class="form-control font-monospace"
+                               placeholder="SP-API 傳來的加密 secret_key（base64，64 字元）" />
+                        <div class="form-text">提供 Client Secret 時自動執行兩步驟解密；留空 Client Secret 則視為明文 secret_key（32 字元）</div>
+                    </div>
+
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label asp-for="SecretKey" class="form-label fw-semibold">Secret Key</label>
-                            <input asp-for="SecretKey"
+                            <label asp-for="ClientSecret" class="form-label fw-semibold">
+                                Client Secret
+                                <span class="badge bg-secondary ms-1">16 字元</span>
+                            </label>
+                            <input asp-for="ClientSecret"
                                    class="form-control font-monospace"
-                                   placeholder="myData 核發的 32 字元金鑰" />
+                                   placeholder="myData 管理後臺的 client_secret" />
                         </div>
                         <div class="col-md-6">
-                            <label asp-for="Iv" class="form-label fw-semibold">IV</label>
+                            <label asp-for="Iv" class="form-label fw-semibold">
+                                IV
+                                <span class="badge bg-secondary ms-1">16 字元</span>
+                            </label>
                             <input asp-for="Iv"
                                    class="form-control font-monospace"
-                                   placeholder="myData 管理後臺的 IV" />
+                                   placeholder="myData 管理後臺的 cbc iv" />
                         </div>
                     </div>
 
@@ -76,11 +93,10 @@
         @* 參數說明 *@
         <div class="card border-0 bg-light mb-4">
             <div class="card-body small text-muted">
-                <strong>預填 Demo Data</strong>（使用數發部技術文件 v4.8 §39 官方範例參數產生）<br/>
-                Secret Key：<code>dgFpgO7FhNF15UJsOB1xmCjwwWw3SO6D</code> ·
-                IV：<code>HtzGY7g1hLy5bl9R</code><br/>
-                按「開始解密」可下載 <code>demo.zip</code>（空白 zip，僅供功能驗證）。
-                取得真實 myData 核發的 token 後替換即可。
+                <strong>預填 Demo Data</strong>（連江縣政府測試環境真實資料）<br/>
+                Client Secret：<code>8rtR3mtWlTynOigI</code> ·
+                IV：<code>RjiCdd8OgJcTYgZr</code><br/>
+                JWE Token 自動載入 <code>data1.txt</code>（存在時）。按「開始解密」可下載真實 zip 資料。
             </div>
         </div>
 
@@ -97,11 +113,18 @@
 
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <p class="fw-semibold small mb-1">Request</p>
+                        <p class="fw-semibold small mb-1">Request（兩步驟模式）</p>
                         <pre class="bg-light p-2 rounded small mb-0">{
   "jweToken": "&lt;JWE Compact Serialization&gt;",
-  "secretKey": "&lt;32 字元金鑰&gt;",
-  "iv": "&lt;16 字元 IV&gt;"
+  "secretKey": "&lt;encrypted_secret_key, 64 字元&gt;",
+  "clientSecret": "&lt;client_secret, 16 字元&gt;",
+  "iv": "&lt;cbc iv, 16 字元&gt;"
+}</pre>
+                        <p class="fw-semibold small mb-1 mt-2">Request（單步模式，向下相容）</p>
+                        <pre class="bg-light p-2 rounded small mb-0">{
+  "jweToken": "&lt;JWE Compact Serialization&gt;",
+  "secretKey": "&lt;明文 secret_key, 32 字元&gt;",
+  "iv": "&lt;cbc iv, 16 字元&gt;"
 }</pre>
                     </div>
                     <div class="col-md-6">
@@ -122,8 +145,9 @@
   -H "Content-Type: application/json" \
   -d '{
     "jweToken": "&lt;貼入 JWE token&gt;",
-    "secretKey": "dgFpgO7FhNF15UJsOB1xmCjwwWw3SO6D",
-    "iv": "HtzGY7g1hLy5bl9R"
+    "secretKey": "oWgZzJHnJ8Vkty+YlkldC7TT8aQr7jcQUXlpmEvCESSQqDHoEA+ueZXF6Bm8L8tn",
+    "clientSecret": "8rtR3mtWlTynOigI",
+    "iv": "RjiCdd8OgJcTYgZr"
   }'</pre>
 
             </div>

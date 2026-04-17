@@ -24,7 +24,9 @@ public class DecryptController : ControllerBase
     }
 
     /// <summary>
-    /// 解密 JWE token，回傳 filename 與 Base64 編碼的 zip 內容
+    /// 解密 JWE token，回傳 filename 與 Base64 編碼的 zip 內容。
+    /// 若提供 clientSecret，啟用兩步驟模式（先解密 encrypted_secret_key，再解密 JWE）；
+    /// 否則以 secretKey 直接解密（單步模式，向下相容）。
     /// </summary>
     [HttpPost]
     public IActionResult Decrypt([FromBody] DecryptRequest request)
@@ -42,7 +44,15 @@ public class DecryptController : ControllerBase
 
         try
         {
-            var result = _jweService.Decrypt(cleanToken, request.SecretKey.Trim(), request.Iv.Trim());
+            var useFullFlow = !string.IsNullOrWhiteSpace(request.ClientSecret);
+
+            var result = useFullFlow
+                ? _jweService.DecryptWithEncryptedKey(
+                    cleanToken,
+                    request.SecretKey.Trim(),
+                    request.ClientSecret!.Trim(),
+                    request.Iv.Trim())
+                : _jweService.Decrypt(cleanToken, request.SecretKey.Trim(), request.Iv.Trim());
 
             return Ok(new
             {
