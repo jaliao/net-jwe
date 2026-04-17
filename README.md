@@ -191,13 +191,68 @@ tests/
 
 ## 快速開始
 
+### 1. 建置
+
 ```bash
-# 建置
 dotnet build
+```
 
-# 執行測試
-dotnet test
+### 2. 設定 Demo UI 憑證
 
-# 啟動 Demo UI
+Demo 頁面的預設值透過設定系統注入，不寫死於程式碼。本機開發時需建立
+`appsettings.Development.json`（已在 `.gitignore`，不會入版控）：
+
+```bash
+cp src/NetJwe.Api/appsettings.Development.json.example \
+   src/NetJwe.Api/appsettings.Development.json
+```
+
+開啟 `appsettings.Development.json`，填入實際的測試環境憑證：
+
+```json
+{
+  "Demo": {
+    "EncryptedSecretKey": "<SP-API 傳來的 encrypted_secret_key，base64，64 字元>",
+    "ClientSecret": "<myData 管理後臺的 client_secret，16 字元>",
+    "Iv": "<myData 管理後臺的 cbc iv，16 字元>"
+  }
+}
+```
+
+> 生產環境改用環境變數（.NET Core 自動對應）：
+> ```bash
+> Demo__ClientSecret=xxxx
+> Demo__EncryptedSecretKey=xxxx
+> Demo__Iv=xxxx
+> ```
+
+### 3. 啟動 Demo UI
+
+```bash
 dotnet run --project src/NetJwe.Api
+# 開啟 https://localhost:5001
+```
+
+### 4. 執行測試
+
+```bash
+dotnet test
+```
+
+需要憑證的整合測試（成功路徑）在環境變數未設定時會自動跳過。
+如需執行完整測試，請先設定環境變數：
+
+```bash
+# 複製範本並填入實際值
+cp tests/NetJwe.Core.Tests/testsecrets.sh.example \
+   tests/NetJwe.Core.Tests/testsecrets.sh
+
+# 編輯 testsecrets.sh，填入：
+# NETJWE_TEST_ENCRYPTED_SECRET_KEY
+# NETJWE_TEST_CLIENT_SECRET
+# NETJWE_TEST_CBC_IV
+# NETJWE_TEST_EXPECTED_SECRET_KEY
+
+source tests/NetJwe.Core.Tests/testsecrets.sh
+dotnet test
 ```
