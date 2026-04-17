@@ -29,26 +29,29 @@ public class JweServiceTests
     }
 
     /// <summary>
-    /// 完整兩步驟解密整合測試，使用 2026-04-17 真實測試資料。
-    /// JWE token 以 data1.txt 載入，避免 inline 過長。
+    /// 完整兩步驟解密整合測試，使用真實測試資料。
+    /// 需設定環境變數（見 testsecrets.sh.example）且 data1.txt 存在時才執行。
     /// </summary>
     [Fact]
     public void DecryptWithEncryptedKey_真實測試資料_成功解密zip()
     {
+        if (!TestSecrets.IsConfigured)
+            return; // 環境變數未設定，跳過
+
         var tokenPath = Path.Combine(
             AppContext.BaseDirectory,
             "..", "..", "..", "..", "..", "data1.txt");
 
         if (!File.Exists(tokenPath))
-            return; // 測試資料不在 CI 環境，跳過
+            return; // JWE token 檔案不存在，跳過
 
         var token = File.ReadAllText(tokenPath).Trim();
 
-        const string encryptedSecretKey = "oWgZzJHnJ8Vkty+YlkldC7TT8aQr7jcQUXlpmEvCESSQqDHoEA+ueZXF6Bm8L8tn";
-        const string clientSecret       = "8rtR3mtWlTynOigI";
-        const string cbcIv              = "RjiCdd8OgJcTYgZr";
-
-        var result = _service.DecryptWithEncryptedKey(token, encryptedSecretKey, clientSecret, cbcIv);
+        var result = _service.DecryptWithEncryptedKey(
+            token,
+            TestSecrets.EncryptedSecretKey,
+            TestSecrets.ClientSecret,
+            TestSecrets.CbcIv);
 
         Assert.False(string.IsNullOrEmpty(result.FileName));
         Assert.EndsWith(".zip", result.FileName, StringComparison.OrdinalIgnoreCase);

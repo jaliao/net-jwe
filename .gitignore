@@ -38,6 +38,9 @@ coverage/
 appsettings.Development.json
 appsettings.Local.json
 
+# 測試機敏參數
+testsecrets.sh
+
 # OS
 .DS_Store
 Thumbs.db

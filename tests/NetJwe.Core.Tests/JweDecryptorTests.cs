@@ -58,32 +58,38 @@ public class JweDecryptorTests
 }
 
 /// <summary>
-/// SecretKeyDecryptor 的單元測試，使用 2026-04-17 真實測試資料作為測試向量
+/// SecretKeyDecryptor 的單元測試。
+/// 成功路徑需設定環境變數（見 testsecrets.sh.example），未設定時自動跳過。
+/// 失敗路徑使用合成資料，不依賴真實憑證。
 /// </summary>
 public class SecretKeyDecryptorTests
 {
     private readonly SecretKeyDecryptor _decryptor = new();
 
-    // 真實測試向量（2026-04-17 連江縣政府測試資料）
-    private const string EncryptedSecretKey = "oWgZzJHnJ8Vkty+YlkldC7TT8aQr7jcQUXlpmEvCESSQqDHoEA+ueZXF6Bm8L8tn";
-    private const string ClientSecret       = "8rtR3mtWlTynOigI";
-    private const string CbcIv              = "RjiCdd8OgJcTYgZr";
-    private const string ExpectedSecretKey  = "edf4933bc95e483ebdf29d30c4c751f7";
+    // 合成用：任意合法的 AES/CBC 密文（48 bytes base64），供失敗路徑測試使用
+    private static readonly string SyntheticEncryptedBlob =
+        Convert.ToBase64String(new byte[48]);
 
     [Fact]
     public void Decrypt_真實測試向量_回傳正確secretKey()
     {
-        var result = _decryptor.Decrypt(EncryptedSecretKey, ClientSecret, CbcIv);
+        if (!TestSecrets.IsConfigured)
+            return; // 環境變數未設定，跳過（設定方式見 testsecrets.sh.example）
+
+        var result = _decryptor.Decrypt(
+            TestSecrets.EncryptedSecretKey,
+            TestSecrets.ClientSecret,
+            TestSecrets.CbcIv);
 
         Assert.Equal(32, result.Length);
-        Assert.Equal(ExpectedSecretKey, Encoding.UTF8.GetString(result));
+        Assert.Equal(TestSecrets.ExpectedSecretKey, Encoding.UTF8.GetString(result));
     }
 
     [Fact]
     public void Decrypt_clientSecret長度錯誤_拋出JweException()
     {
         var ex = Assert.Throws<JweException>(() =>
-            _decryptor.Decrypt(EncryptedSecretKey, "tooshort", CbcIv));
+            _decryptor.Decrypt(SyntheticEncryptedBlob, "tooshort", "1234567890123456"));
         Assert.Contains("client_secret", ex.Message);
     }
 
@@ -91,15 +97,21 @@ public class SecretKeyDecryptorTests
     public void Decrypt_cbcIv長度錯誤_拋出JweException()
     {
         var ex = Assert.Throws<JweException>(() =>
-            _decryptor.Decrypt(EncryptedSecretKey, ClientSecret, "badiv"));
+            _decryptor.Decrypt(SyntheticEncryptedBlob, "ValidSecret1234X", "badiv"));
         Assert.Contains("cbc_iv", ex.Message);
     }
 
     [Fact]
     public void Decrypt_clientSecret錯誤_拋出JweException()
     {
+        if (!TestSecrets.IsConfigured)
+            return; // 需要真實 encrypted blob 才能觸發 padding 錯誤
+
         var ex = Assert.Throws<JweException>(() =>
-            _decryptor.Decrypt(EncryptedSecretKey, "WrongSecret1234X", CbcIv));
+            _decryptor.Decrypt(
+                TestSecrets.EncryptedSecretKey,
+                "WrongSecret1234X",
+                TestSecrets.CbcIv));
         Assert.Contains("解密失敗", ex.Message);
     }
 }
